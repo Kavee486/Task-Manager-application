@@ -5,7 +5,7 @@ export function TasksSkeleton() {
     <div
       role="status"
       aria-label="Loading tasks"
-      className="divide-y rounded-xl border bg-card"
+      className="divide-y overflow-hidden rounded-2xl border bg-card/70 shadow-sm backdrop-blur"
     >
       {Array.from({ length: 5 }, (_, index) => (
         <div key={index} className="flex items-center gap-4 p-4">

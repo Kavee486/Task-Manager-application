@@ -1,4 +1,7 @@
+"use client";
+
 import { PencilIcon, Trash2Icon } from "lucide-react";
+import { AnimatePresence, motion } from "motion/react";
 import { Button } from "@/components/ui/button";
 import {
   Table,
@@ -8,26 +11,34 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import type { Task } from "@/lib/api";
+import type { Task, TaskStatus } from "@/lib/api";
 import { formatDate, getDueState } from "@/lib/tasks";
 import { cn } from "@/lib/utils";
-import { StatusBadge } from "./status-badge";
+import { StatusMenu } from "./status-menu";
+
+const MotionRow = motion.create(TableRow);
 
 interface TasksTableProps {
   tasks: Task[];
   onEdit: (task: Task) => void;
   onDelete: (task: Task) => void;
+  onStatusChange: (task: Task, status: TaskStatus) => void;
 }
 
-export function TasksTable({ tasks, onEdit, onDelete }: TasksTableProps) {
+export function TasksTable({
+  tasks,
+  onEdit,
+  onDelete,
+  onStatusChange,
+}: TasksTableProps) {
   return (
-    <div className="rounded-xl border bg-card">
+    <div className="overflow-hidden rounded-2xl border bg-card/70 shadow-sm backdrop-blur">
       <Table>
         <TableHeader>
           <TableRow>
             <TableHead className="w-[45%]">Task</TableHead>
             <TableHead>Status</TableHead>
-            <TableHead>Due date</TableHead>
+            <TableHead className="hidden sm:table-cell">Due date</TableHead>
             <TableHead className="hidden sm:table-cell">Created</TableHead>
             <TableHead className="w-24">
               <span className="sr-only">Actions</span>
@@ -35,50 +46,73 @@ export function TasksTable({ tasks, onEdit, onDelete }: TasksTableProps) {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {tasks.map((task) => (
-            <TableRow key={task.id}>
-              <TableCell className="max-w-0 whitespace-normal">
-                <p className="truncate font-medium">{task.title}</p>
-                {task.description && (
-                  <p className="truncate text-sm text-muted-foreground">
-                    {task.description}
+          <AnimatePresence>
+            {tasks.map((task, index) => (
+              <MotionRow
+                key={task.id}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{
+                  opacity: 1,
+                  y: 0,
+                  transition: { delay: Math.min(index, 8) * 0.04 },
+                }}
+                exit={{ opacity: 0, transition: { duration: 0.15 } }}
+              >
+                <TableCell className="max-w-0 whitespace-normal">
+                  <p
+                    className={cn(
+                      "truncate font-medium",
+                      task.status === "DONE" &&
+                        "text-muted-foreground line-through decoration-muted-foreground/50",
+                    )}
+                  >
+                    {task.title}
                   </p>
-                )}
-              </TableCell>
-              <TableCell>
-                <StatusBadge status={task.status} />
-              </TableCell>
-              <TableCell>
-                <DueDate task={task} />
-              </TableCell>
-              <TableCell className="hidden text-muted-foreground sm:table-cell">
-                {formatDate(task.createdAt)}
-              </TableCell>
-              <TableCell>
-                <div className="flex justify-end gap-1">
-                  <Button
-                    variant="ghost"
-                    size="icon-sm"
-                    onClick={() => onEdit(task)}
-                    aria-label={`Edit task: ${task.title}`}
-                    title="Edit task"
-                  >
-                    <PencilIcon />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon-sm"
-                    onClick={() => onDelete(task)}
-                    aria-label={`Delete task: ${task.title}`}
-                    title="Delete task"
-                    className="text-muted-foreground hover:text-destructive"
-                  >
-                    <Trash2Icon />
-                  </Button>
-                </div>
-              </TableCell>
-            </TableRow>
-          ))}
+                  {task.description && (
+                    <p className="truncate text-sm text-muted-foreground">
+                      {task.description}
+                    </p>
+                  )}
+                  {/* On phones the Due date column is hidden; show it here. */}
+                  <div className="mt-1 text-sm sm:hidden">
+                    <DueDate task={task} />
+                  </div>
+                </TableCell>
+                <TableCell>
+                  <StatusMenu task={task} onChange={onStatusChange} />
+                </TableCell>
+                <TableCell className="hidden sm:table-cell">
+                  <DueDate task={task} />
+                </TableCell>
+                <TableCell className="hidden text-muted-foreground sm:table-cell">
+                  {formatDate(task.createdAt)}
+                </TableCell>
+                <TableCell>
+                  <div className="flex justify-end gap-1">
+                    <Button
+                      variant="ghost"
+                      size="icon-sm"
+                      onClick={() => onEdit(task)}
+                      aria-label={`Edit task: ${task.title}`}
+                      title="Edit task"
+                    >
+                      <PencilIcon />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon-sm"
+                      onClick={() => onDelete(task)}
+                      aria-label={`Delete task: ${task.title}`}
+                      title="Delete task"
+                      className="text-muted-foreground hover:text-destructive"
+                    >
+                      <Trash2Icon />
+                    </Button>
+                  </div>
+                </TableCell>
+              </MotionRow>
+            ))}
+          </AnimatePresence>
         </TableBody>
       </Table>
     </div>
@@ -97,7 +131,8 @@ function DueDate({ task }: { task: Task }) {
       <span
         className={cn(
           dueState === "overdue" && "font-medium text-destructive",
-          dueState === "today" && "font-medium text-amber-700 dark:text-amber-400",
+          dueState === "today" &&
+            "font-medium text-amber-700 dark:text-amber-400",
         )}
       >
         {formatted}

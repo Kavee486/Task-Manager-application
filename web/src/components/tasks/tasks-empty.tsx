@@ -3,9 +3,9 @@ import { Button } from "@/components/ui/button";
 
 export function TasksEmpty({ onCreate }: { onCreate: () => void }) {
   return (
-    <div className="flex flex-col items-center gap-2 rounded-xl border border-dashed bg-card px-6 py-16 text-center">
-      <div className="mb-1 flex size-12 items-center justify-center rounded-full bg-muted">
-        <ClipboardListIcon className="size-6 text-muted-foreground" />
+    <div className="flex flex-col items-center gap-2 rounded-2xl border border-dashed bg-card/60 px-6 py-16 backdrop-blur text-center">
+      <div className="mb-1 flex size-14 items-center justify-center rounded-2xl bg-accent">
+        <ClipboardListIcon className="size-7 text-primary" />
       </div>
       <h2 className="font-medium">No tasks yet</h2>
       <p className="max-w-sm text-sm text-muted-foreground">
