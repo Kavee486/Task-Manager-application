@@ -1,4 +1,4 @@
-import type { TaskStatus } from "@/lib/api";
+import type { ListTasksParams, Task, TaskStatus } from "@/lib/api";
 
 export const STATUS_LABELS: Record<TaskStatus, string> = {
   TODO: "To do",
@@ -46,4 +46,61 @@ export function validateTaskForm(values: TaskFormValues): TaskFormErrors {
     errors.description = `Description must be ${DESCRIPTION_MAX_LENGTH} characters or fewer.`;
   }
   return errors;
+}
+
+export type StatusFilter = TaskStatus | "ALL";
+
+export const FILTER_OPTIONS: { value: StatusFilter; label: string }[] = [
+  { value: "ALL", label: "All" },
+  { value: "TODO", label: STATUS_LABELS.TODO },
+  { value: "IN_PROGRESS", label: STATUS_LABELS.IN_PROGRESS },
+  { value: "DONE", label: STATUS_LABELS.DONE },
+];
+
+export type SortKey = "newest" | "due-asc" | "due-desc";
+
+export const SORT_OPTIONS: {
+  value: SortKey;
+  label: string;
+  params: ListTasksParams;
+}[] = [
+  {
+    value: "newest",
+    label: "Newest first",
+    params: { sort: "createdAt", order: "desc" },
+  },
+  {
+    value: "due-asc",
+    label: "Due date: soonest",
+    params: { sort: "dueDate", order: "asc" },
+  },
+  {
+    value: "due-desc",
+    label: "Due date: latest",
+    params: { sort: "dueDate", order: "desc" },
+  },
+];
+
+export type DueState = "overdue" | "today" | null;
+
+const pad = (value: number) => String(value).padStart(2, "0");
+
+/** Today's date in the user's timezone, as yyyy-mm-dd. */
+function localToday(now = new Date()) {
+  return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+}
+
+/**
+ * Whether a task is overdue or due today. Finished tasks are never flagged.
+ * Due dates are plain calendar dates, so compare yyyy-mm-dd strings.
+ */
+export function getDueState(
+  task: Pick<Task, "dueDate" | "status">,
+  today = localToday(),
+): DueState {
+  if (!task.dueDate || task.status === "DONE") return null;
+  const due = task.dueDate.slice(0, 10);
+  if (due < today) return "overdue";
+  if (due === today) return "today";
+  return null;
 }

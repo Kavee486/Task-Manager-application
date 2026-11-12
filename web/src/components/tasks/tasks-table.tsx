@@ -9,7 +9,8 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import type { Task } from "@/lib/api";
-import { formatDate } from "@/lib/tasks";
+import { formatDate, getDueState } from "@/lib/tasks";
+import { cn } from "@/lib/utils";
 import { StatusBadge } from "./status-badge";
 
 interface TasksTableProps {
@@ -48,9 +49,7 @@ export function TasksTable({ tasks, onEdit, onDelete }: TasksTableProps) {
                 <StatusBadge status={task.status} />
               </TableCell>
               <TableCell>
-                {formatDate(task.dueDate) ?? (
-                  <span className="text-muted-foreground">No due date</span>
-                )}
+                <DueDate task={task} />
               </TableCell>
               <TableCell className="hidden text-muted-foreground sm:table-cell">
                 {formatDate(task.createdAt)}
@@ -82,6 +81,39 @@ export function TasksTable({ tasks, onEdit, onDelete }: TasksTableProps) {
           ))}
         </TableBody>
       </Table>
+    </div>
+  );
+}
+
+function DueDate({ task }: { task: Task }) {
+  const formatted = formatDate(task.dueDate);
+  if (!formatted) {
+    return <span className="text-muted-foreground">No due date</span>;
+  }
+
+  const dueState = getDueState(task);
+  return (
+    <div className="flex flex-col">
+      <span
+        className={cn(
+          dueState === "overdue" && "font-medium text-destructive",
+          dueState === "today" && "font-medium text-amber-700 dark:text-amber-400",
+        )}
+      >
+        {formatted}
+      </span>
+      {dueState && (
+        <span
+          className={cn(
+            "text-xs",
+            dueState === "overdue"
+              ? "text-destructive"
+              : "text-amber-700 dark:text-amber-400",
+          )}
+        >
+          {dueState === "overdue" ? "Overdue" : "Due today"}
+        </span>
+      )}
     </div>
   );
 }

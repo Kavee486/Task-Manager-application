@@ -1,18 +1,22 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { PlusIcon } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { useTasks } from "@/hooks/use-tasks";
 import type { Task } from "@/lib/api";
+import { SORT_OPTIONS, type SortKey, type StatusFilter } from "@/lib/tasks";
+import { cn } from "@/lib/utils";
 import { DeleteTaskDialog } from "./delete-task-dialog";
 import { TaskFormDialog, type SaveMode } from "./task-form-dialog";
 import { TaskSummary } from "./task-summary";
 import { TasksEmpty } from "./tasks-empty";
 import { TasksError } from "./tasks-error";
+import { TasksNoMatches } from "./tasks-no-matches";
 import { TasksSkeleton } from "./tasks-skeleton";
 import { TasksTable } from "./tasks-table";
+import { TasksToolbar } from "./tasks-toolbar";
 
 interface FormDialogState {
   open: boolean;
@@ -29,7 +33,11 @@ interface DeleteDialogState {
 }
 
 export function TaskManager() {
-  const { state, reload, refresh } = useTasks();
+  const [filter, setFilter] = useState<StatusFilter>("ALL");
+  const [sort, setSort] = useState<SortKey>("newest");
+  const { state, isRefetching, reload, refresh } = useTasks(
+    SORT_OPTIONS.find((option) => option.value === sort)?.params,
+  );
   const [formDialog, setFormDialog] = useState<FormDialogState>({
     open: false,
     task: null,
@@ -40,6 +48,18 @@ export function TaskManager() {
     open: false,
     task: null,
   });
+
+  // Sorting happens on the server; the status filter is applied here so the
+  // summary counters always reflect every task.
+  const visibleTasks = useMemo(
+    () =>
+      state.status !== "success"
+        ? []
+        : filter === "ALL"
+          ? state.tasks
+          : state.tasks.filter((task) => task.status === filter),
+    [state, filter],
+  );
 
   const openForm = (task: Task | null) =>
     setFormDialog((current) => ({ open: true, task, key: current.key + 1 }));
@@ -100,11 +120,31 @@ export function TaskManager() {
         {state.tasks.length === 0 ? (
           <TasksEmpty onCreate={() => openForm(null)} />
         ) : (
-          <TasksTable
-            tasks={state.tasks}
-            onEdit={openForm}
-            onDelete={(task) => setDeleteDialog({ open: true, task })}
-          />
+          <>
+            <TasksToolbar
+              filter={filter}
+              onFilterChange={setFilter}
+              sort={sort}
+              onSortChange={setSort}
+            />
+            {visibleTasks.length === 0 ? (
+              <TasksNoMatches onClear={() => setFilter("ALL")} />
+            ) : (
+              <div
+                className={cn(
+                  "transition-opacity",
+                  isRefetching && "opacity-60",
+                )}
+                aria-busy={isRefetching}
+              >
+                <TasksTable
+                  tasks={visibleTasks}
+                  onEdit={openForm}
+                  onDelete={(task) => setDeleteDialog({ open: true, task })}
+                />
+              </div>
+            )}
+          </>
         )}
       </div>
     );

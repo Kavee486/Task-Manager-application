@@ -1,0 +1,32 @@
+# Runs the whole app:  docker compose up --build
+#   Web: http://localhost:3000     API: http://localhost:4000/tasks
+
+services:
+  api:
+    build: ./api
+    ports:
+      - "4000:4000"
+    environment:
+      PORT: 4000
+      # Origin the browser loads the frontend from (used for CORS).
+      WEB_ORIGIN: http://localhost:3000
+      DATABASE_URL: file:/data/tasks.db
+    volumes:
+      - api-data:/data
+    restart: unless-stopped
+
+  web:
+    build:
+      context: ./web
+      args:
+        # Baked into the browser bundle, so it must be reachable from the browser.
+        NEXT_PUBLIC_API_URL: http://localhost:4000
+    ports:
+      - "3000:3000"
+    depends_on:
+      api:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  api-data:

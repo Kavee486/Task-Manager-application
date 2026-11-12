@@ -20,7 +20,17 @@ export interface TaskInput {
   dueDate: string | null;
 }
 
-const API_URL =process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
+export type TaskSortField = "createdAt" | "dueDate";
+export type SortOrder = "asc" | "desc";
+
+/** Query options for GET /tasks (see the API's QueryTasksDto). */
+export interface ListTasksParams {
+  status?: TaskStatus;
+  sort?: TaskSortField;
+  order?: SortOrder;
+}
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
 
 /** Error thrown for any failed API call. `status` is 0 when the server is unreachable. */
 export class ApiError extends Error {
@@ -72,7 +82,16 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 }
 
 export const tasksApi = {
-  list: (signal?: AbortSignal) => request<Task[]>("/tasks", { signal }),
+  list: (params: ListTasksParams = {}, signal?: AbortSignal) => {
+    const query = new URLSearchParams();
+    for (const [key, value] of Object.entries(params)) {
+      if (value) query.set(key, value);
+    }
+    const queryString = query.toString();
+    return request<Task[]>(`/tasks${queryString ? `?${queryString}` : ""}`, {
+      signal,
+    });
+  },
 
   create: (input: TaskInput) =>
     request<Task>("/tasks", { method: "POST", body: JSON.stringify(input) }),
