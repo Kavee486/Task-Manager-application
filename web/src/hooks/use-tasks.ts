@@ -8,10 +8,15 @@ type TasksState =
   | { status: "error"; message: string }
   | { status: "success"; tasks: Task[] };
 
-/** Loads the task list and exposes `reload` to retry or refresh it. */
+/**
+ * Loads the task list.
+ * - `reload` shows the loading state again (used by the retry button).
+ * - `refresh` refetches in the background, keeping the current list on screen
+ *   (used after creating, editing or deleting a task).
+ */
 export function useTasks() {
   const [state, setState] = useState<TasksState>({ status: "loading" });
-  const [reloadKey, setReloadKey] = useState(0);
+  const [fetchKey, setFetchKey] = useState(0);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -29,12 +34,14 @@ export function useTasks() {
       });
 
     return () => controller.abort();
-  }, [reloadKey]);
+  }, [fetchKey]);
+
+  const refresh = useCallback(() => setFetchKey((key) => key + 1), []);
 
   const reload = useCallback(() => {
     setState({ status: "loading" });
-    setReloadKey((key) => key + 1);
-  }, []);
+    refresh();
+  }, [refresh]);
 
-  return { state, reload };
+  return { state, reload, refresh };
 }

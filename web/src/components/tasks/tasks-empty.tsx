@@ -1,6 +1,7 @@
-import { ClipboardListIcon } from "lucide-react";
+import { ClipboardListIcon, PlusIcon } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
-export function TasksEmpty() {
+export function TasksEmpty({ onCreate }: { onCreate: () => void }) {
   return (
     <div className="flex flex-col items-center gap-2 rounded-xl border border-dashed bg-card px-6 py-16 text-center">
       <div className="mb-1 flex size-12 items-center justify-center rounded-full bg-muted">
@@ -11,6 +12,10 @@ export function TasksEmpty() {
         Tasks you create will show up here, along with their status and due
         date.
       </p>
+      <Button onClick={onCreate} className="mt-3">
+        <PlusIcon data-icon="inline-start" />
+        Create your first task
+      </Button>
     </div>
   );
 }

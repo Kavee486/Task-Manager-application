@@ -11,7 +11,16 @@ export interface Task {
   createdAt: string;
 }
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
+/** Body accepted by POST /tasks and PATCH /tasks/:id. */
+export interface TaskInput {
+  title: string;
+  description: string | null;
+  status: TaskStatus;
+  /** ISO date string (e.g. "2026-12-31"), or null for no due date. */
+  dueDate: string | null;
+}
+
+const API_URL =process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
 
 /** Error thrown for any failed API call. `status` is 0 when the server is unreachable. */
 export class ApiError extends Error {
@@ -64,4 +73,15 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 
 export const tasksApi = {
   list: (signal?: AbortSignal) => request<Task[]>("/tasks", { signal }),
+
+  create: (input: TaskInput) =>
+    request<Task>("/tasks", { method: "POST", body: JSON.stringify(input) }),
+
+  update: (id: number, input: Partial<TaskInput>) =>
+    request<Task>(`/tasks/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify(input),
+    }),
+
+  remove: (id: number) => request<void>(`/tasks/${id}`, { method: "DELETE" }),
 };
