@@ -155,7 +155,7 @@ I used claude code and chatgpt to get help for design and working tasks in this 
 
 What it helped with: scaffolding the NestJS and Next.js projects, the Prisma schema and migration, the CRUD module, DTOs, the unit and e2e tests, the shadcn/ui components, the Dockerfiles, and the visual redesign.
 
-What I changed or had to correct in the generated code:
+What I had to correct in the generated code:
 
 - The Prisma CLI resolved to an incompatible release candidate, so I pinned `prisma` to the same version as the client and added a `postinstall` to generate the client.
 - shadcn's setup pointed the sans font variable at itself, which fell back to a serif font; I pointed it at the Geist font.
